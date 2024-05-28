@@ -1,0 +1,120 @@
+﻿@page "/detail/{id:guid}"
+@inject ToDoListClient ToDoListClient
+@inject ToDoItemClient ToDoItemClient
+@inject HttpClient HttpClient
+@using Shared.DTOS.ToDoLists.GetItemsByListId
+@using Shared.DTOS.ToDoLists.AddItem
+@using Shared.DTOS.ToDoItems.Update
+
+<PageTitle>Detail</PageTitle>
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Add New ToDo Item</h4>
+        </div>
+        <div class="card-body">
+            <EditForm Model="newToDoItemTitle" OnSubmit="addToDoItem">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <InputText type="text" id="title" class="form-control" @bind-Value="newToDoItemTitle" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Add ToDo Item
+                </button>
+            </EditForm>
+        </div>
+    </div>
+
+    @if (response is null)
+    {
+        <p class="mt-4 text-center text-muted"><em>Loading ...</em></p>
+    }
+    else if (response.ToDoItems.Count < 1)
+    {
+        <p class="mt-4 text-center text-muted"><em>No items in this list :(</em></p>
+    }
+    else
+    {
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">ToDo Items</h4>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Content</th>
+                            <th>Completed?</th>
+                            <th>Created By</th>
+                            <th>Creation Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in response.ToDoItems)
+                        {
+                            <tr @onclick="() => updateToDoItem(item.Id, item.IsDone)">
+                                <td>@item.Text</td>
+                                <td>
+                                    @if (item.IsDone)
+                                    {
+                                        <i class="fas fa-check text-success"></i>
+                                        <p>Yes</p>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-times text-danger"></i>
+                                        <p>No</p>
+                                    }
+                                </td>
+                                <td>@item.CreatedBy</td>
+                                <td>@item.Created.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <button class="btn btn-danger" @onclick:stopPropagation="true" @onclick="() => onButtonClick(item.Id)">
+                                        <i class="fas fa-info-circle"></i> Elimina
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid id { get; set; }
+
+    private GetItemsByListIdResponse response;
+    private string newToDoItemTitle = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+       response = await ToDoListClient.GetItemsByListIdAsync(HttpClient, id);
+    }
+
+    private async Task addToDoItem()
+    {
+        AddToDoItemRequest request = new(id, newToDoItemTitle);
+        await ToDoListClient.AddToDoItemAsync(HttpClient, request);
+        response = await ToDoListClient.GetItemsByListIdAsync(HttpClient, id);
+        newToDoItemTitle = string.Empty;
+    }
+
+    private async Task updateToDoItem(Guid itemId, bool isDone)
+    {
+        bool newIsDone = isDone ? false : true;
+        UpdateToDoItemRequest request = new(itemId, newIsDone);
+        await ToDoItemClient.UpdateToDoItemAsync(HttpClient, request);
+        response = await ToDoListClient.GetItemsByListIdAsync(HttpClient, id);
+    }
+
+    private async Task onButtonClick(Guid itemId)
+    {
+        await ToDoItemClient.DeleteToDoItemAsync(HttpClient, itemId);
+        response = await ToDoListClient.GetItemsByListIdAsync(HttpClient, id);
+    }
+}

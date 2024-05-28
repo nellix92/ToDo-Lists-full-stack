@@ -1,0 +1,63 @@
+﻿@page "/edit/{id:guid}"
+@using Shared.DTOS.ToDoLists.GetById
+@inject HttpClient HttpClient
+@inject ToDoListClient ToDoListClient
+@inject NavigationManager NavManager
+
+<PageTitle>Edit ToDo List</PageTitle>
+
+@if (response is null)
+{
+    <p><em>Loading ...</em></p>
+}
+else
+{
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Modifica ToDo List</h4>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@response" OnValidSubmit="updateToDoList" class="form-horizontal">
+                    <div class="mb-3 row">
+                        <label for="ListTitle" class="col-sm-2 col-form-label">Title:</label>
+                        <div class="col-sm-10">
+                            <InputText id="ListTitle" @bind-Value="response.ListTitle" class="form-control"></InputText>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" @onclick="goBack">
+                            <i class="fas fa-arrow-left"></i> Annulla
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salva
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid id { get; set; }
+
+    private GetToDoListByIdResponse? response { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        response = await ToDoListClient.GetToDoListByIdAsync(HttpClient, id);
+    }
+
+    private async Task updateToDoList()
+    {
+        await ToDoListClient.UpdateToDoListAsync(HttpClient, id, response.ListTitle);
+        NavManager.NavigateTo("/");
+    }
+
+    private void goBack()
+    {
+        NavManager.NavigateTo("/");
+    }
+}

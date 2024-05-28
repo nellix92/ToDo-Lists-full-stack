@@ -1,0 +1,98 @@
+﻿@page "/"
+@using Shared.DTOS.ToDoLists.GetAll
+@inject HttpClient HttpClient
+@inject ToDoListClient ToDoListClient
+@inject NavigationManager NavManager
+@using Shared.DTOS.ToDoLists.CreateToDoList
+
+<PageTitle>Home</PageTitle>
+
+@if (response is null)
+{
+    <p><em>Loading ...</em></p>
+}
+else
+{
+    <div class="container mt-4">
+        <h2 class="mb-3">ToDo Lists</h2>
+
+        <div class="mb-4">
+            <EditForm Model="newToDoListTitle" OnSubmit="addToDoList">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <InputText type="text" id="title" class="form-control" @bind-Value="newToDoListTitle" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Add ToDo List
+                </button>
+            </EditForm>
+        </div>
+
+        <div class="row">
+            @foreach (var toDoList in response.ToDoLists)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                @toDoList.Title
+                            </h5>
+                            @if (toDoList.IsDone)
+                            {
+                                <i class="fas fa-check-circle text-success"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-times-circle text-danger"></i>
+                            }
+                            <p class="card-text">
+                                <strong>Created By:</strong> @toDoList.CreatedBy<br />
+                                <strong>Creation Date:</strong> @toDoList.Created.ToString("dd/MM/yyyy")
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-primary" @onclick="() => redirectToDetail(toDoList.Id)">Details</button>
+                                <div>
+                                    <a class="btn btn-warning btn-sm me-2" href="/edit/@toDoList.Id" title="Modifica">
+                                        <i class="fas fa-edit"></i> Modifica
+                                    </a>
+                                    <button class="btn btn-danger btn-sm" @onclick="() => deleteToDoList(toDoList.Id)" title="Elimina">
+                                        <i class="fas fa-trash-alt"></i> Elimina
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    GetAllToDoListResponse? response;
+    private string newToDoListTitle = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        response = await ToDoListClient.GetAllAsync(HttpClient);
+    }
+
+    public void redirectToDetail(Guid id)
+    {
+        NavManager.NavigateTo($"/detail/{id}");
+    }
+
+    public async void deleteToDoList(Guid id)
+    {
+        await ToDoListClient.DeleteToDoListAsync(HttpClient, id);
+        response = await ToDoListClient.GetAllAsync(HttpClient);
+    }
+
+    private async Task addToDoList()
+    {
+            var request = new CreateToDoListRequest(newToDoListTitle);
+            await ToDoListClient.AddToDoListAsync(HttpClient, request);
+            response = await ToDoListClient.GetAllAsync(HttpClient);
+            newToDoListTitle = string.Empty;
+    }
+}
