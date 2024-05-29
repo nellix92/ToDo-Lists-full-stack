@@ -17,7 +17,7 @@ public class Endpoint(ApplicationDbContext context) : Endpoint<CreateToDoListReq
     public override async Task HandleAsync(CreateToDoListRequest req, CancellationToken ct)
     {
         var toDoList = ToDoList.Create(req.title);
-        toDoList.CreatedBy = "Alessio";
+        toDoList.CreatedBy = "Nello";
         toDoList.Created = DateTime.Now;
         await context.ToDoLists.AddAsync(toDoList);
         await context.SaveChangesAsync();
