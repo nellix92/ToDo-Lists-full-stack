@@ -32,7 +32,7 @@ public class ToDoList : AuditableBaseEntity<Guid>, IProgressive
     public ToDoItem AddToDoItem(string text)
     {
         var toDoItem = ToDoItem.CreateNoGuid(text, this.Id);
-        toDoItem.CreatedBy = "Alessio";
+        toDoItem.CreatedBy = "Nello";
         toDoItem.Created = DateTime.UtcNow;
         ToDoItems.Add(toDoItem);
         return toDoItem;
